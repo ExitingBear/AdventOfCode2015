@@ -1,0 +1,75 @@
+---
+title: "Day 4 Notebook"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(dplyr)
+library(stringr)
+library(tidyverse)
+library(igraph)
+library(ggplot2)
+library(rgl)
+library(ggraph)
+library(readr)
+library(ds4psy)
+library(numbers)
+options(scipen = 999)
+```
+
+
+## Part 1
+
+There's no better way to go through this than to increment until there's an answer.
+```{r readinput}
+input <- read_lines("Day4Sample.txt")
+```
+
+```{r part1}
+part1<-0
+while(TRUE){
+  x<-digest::digest(str_c(input,part1),algo="md5",serialize=FALSE)
+  if(str_sub(x,1,5)=="00000"){
+    break}
+  part1<-part1+1}
+
+part1
+```
+## Part 2
+Continuing from part 1:
+
+```{r part2}
+part2<-part1-1
+while(TRUE){
+  x<-digest::digest(str_c(input,part2),algo="md5",serialize=FALSE)
+  if(str_sub(x,1,6)=="000000"){
+    break}
+  part2<-part2+1}
+
+part2
+```
+
+
+```{r day4answers function}
+day4answers <-function(input){
+part1<-0
+while(TRUE){
+  x<-digest::digest(str_c(input,part1),algo="md5",serialize=FALSE)
+  if(str_sub(x,1,5)=="00000"){
+    break}
+  part1<-part1+1}
+part2<-part1-1
+while(TRUE){
+  x<-digest::digest(str_c(input,part2),algo="md5",serialize=FALSE)
+  if(str_sub(x,1,6)=="000000"){
+    break}
+  part2<-part2+1}
+  c(part1,part2)}
+
+```
+
+```{r day4answers }
+day4 <- day4answers(input)
+day4
+```

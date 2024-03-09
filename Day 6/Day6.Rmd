@@ -1,0 +1,163 @@
+---
+title: "Day 6 Notebook"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+library(reshape2)
+library(knitr)
+library(dplyr)
+library(stringr)
+library(tidyverse)
+library(igraph)
+library(ggplot2)
+library(rgl)
+library(ggraph)
+library(readr)
+library(ds4psy)
+library(numbers)
+options(scipen = 999)
+```
+
+
+## Part 1
+```{r}
+input <- read_lines("Day6Sample.txt")
+```
+First, set up the lighting grid:
+```{r}
+lightinggrid<-matrix(FALSE,ncol=1000,nrow=1000)
+```
+Then run the instructions 1 at a time:
+```{r}
+for(i in 1:length(input)){
+  instruction<-input[i]
+  ### if turn on
+  if(str_detect(instruction,"turn on")){
+    instruction<-as.numeric(unlist(str_split(str_replace(instruction,"turn on ",""),(" through |,"))))
+    ### because 1-1000 rather than 0-999
+    instruction<-instruction+1
+    lightinggrid[instruction[1]:instruction[3],instruction[2]:instruction[4]]<-TRUE
+  }else if(str_detect(instruction,"turn off")){
+    instruction<-as.numeric(unlist(str_split(str_replace(instruction,"turn off ",""),(" through |,"))))
+    ### because 1-1000 rather than 0-999
+    instruction<-instruction+1
+    lightinggrid[instruction[1]:instruction[3],instruction[2]:instruction[4]]<-FALSE
+  }else{
+    instruction<-as.numeric(unlist(str_split(str_replace(instruction,"toggle ",""),(" through |,"))))
+    ### because 1-1000 rather than 0-999
+    instruction<-instruction+1
+    lightinggrid[instruction[1]:instruction[3],instruction[2]:instruction[4]]<-!lightinggrid[instruction[1]:instruction[3],instruction[2]:instruction[4]]}}
+```
+Part 1 is the count of lighting grids that are turned on
+```{r}
+part1<-sum(lightinggrid)
+part1
+```
+## Part 2
+We find that Santa doesn't know what toggle means:
+First, reset the grid:
+```{r}
+lightinggrid<-matrix(0,ncol=1000,nrow=1000)
+```
+Then run the instructions 1 at a time:
+```{r}
+for(i in 1:length(input)){
+  instruction<-input[i]
+  ### if turn on
+  if(str_detect(instruction,"turn on")){
+    instruction<-as.numeric(unlist(str_split(str_replace(instruction,"turn on ",""),(" through |,"))))
+    ### because 1-1000 rather than 0-999
+    instruction<-instruction+1
+    lightinggrid[instruction[1]:instruction[3],instruction[2]:instruction[4]]<-
+      lightinggrid[instruction[1]:instruction[3],instruction[2]:instruction[4]]+1
+  }else if(str_detect(instruction,"turn off")){
+    instruction<-as.numeric(unlist(str_split(str_replace(instruction,"turn off ",""),(" through |,"))))
+    ### because 1-1000 rather than 0-999
+    instruction<-instruction+1
+    lightinggrid[instruction[1]:instruction[3],instruction[2]:instruction[4]]<-
+      ## subtract 1
+      lightinggrid[instruction[1]:instruction[3],instruction[2]:instruction[4]]-1
+    ## make it 0 if it is less than one.
+    lightinggrid[which(lightinggrid<0)]<-0
+  }else{
+    instruction<-as.numeric(unlist(str_split(str_replace(instruction,"toggle ",""),(" through |,"))))
+    ### because 1-1000 rather than 0-999
+    instruction<-instruction+1
+    lightinggrid[instruction[1]:instruction[3],instruction[2]:instruction[4]]<-
+      lightinggrid[instruction[1]:instruction[3],instruction[2]:instruction[4]]+2}}
+```
+
+Then sum to find part2
+
+```{r}
+part2<-sum(lightinggrid)
+part2
+```
+```{r}
+mt<-melt(lightinggrid)
+ggplot(mt, aes(Var2, Var1, fill = value)) +
+  geom_tile() 
+
+```
+
+
+
+```{r}
+day6answers <-function(input){
+  lightinggrid<-matrix(FALSE,ncol=1000,nrow=1000)
+  for(i in 1:length(input)){
+    instruction<-input[i]
+    ### if turn on
+    if(str_detect(instruction,"turn on")){
+      instruction<-as.numeric(unlist(str_split(str_replace(instruction,"turn on ",""),(" through |,"))))
+      ### because 1-1000 rather than 0-999
+      instruction<-instruction+1
+      lightinggrid[instruction[1]:instruction[3],instruction[2]:instruction[4]]<-TRUE
+    }else if(str_detect(instruction,"turn off")){
+      instruction<-as.numeric(unlist(str_split(str_replace(instruction,"turn off ",""),(" through |,"))))
+      ### because 1-1000 rather than 0-999
+      instruction<-instruction+1
+      lightinggrid[instruction[1]:instruction[3],instruction[2]:instruction[4]]<-FALSE
+    }else{
+      instruction<-as.numeric(unlist(str_split(str_replace(instruction,"toggle ",""),(" through |,"))))
+      ### because 1-1000 rather than 0-999
+      instruction<-instruction+1
+      lightinggrid[instruction[1]:instruction[3],instruction[2]:instruction[4]]<-
+        !lightinggrid[instruction[1]:instruction[3],instruction[2]:instruction[4]]}}
+  part1<-sum(lightinggrid)
+  
+  lightinggrid<-matrix(0,ncol=1000,nrow=1000)
+  for(i in 1:length(input)){
+    instruction<-input[i]
+    ### if turn on
+    if(str_detect(instruction,"turn on")){
+      instruction<-as.numeric(unlist(str_split(str_replace(instruction,"turn on ",""),(" through |,"))))
+      ### because 1-1000 rather than 0-999
+      instruction<-instruction+1
+      lightinggrid[instruction[1]:instruction[3],instruction[2]:instruction[4]]<-
+        lightinggrid[instruction[1]:instruction[3],instruction[2]:instruction[4]]+1
+    }else if(str_detect(instruction,"turn off")){
+      instruction<-as.numeric(unlist(str_split(str_replace(instruction,"turn off ",""),(" through |,"))))
+      ### because 1-1000 rather than 0-999
+      instruction<-instruction+1
+      lightinggrid[instruction[1]:instruction[3],instruction[2]:instruction[4]]<-
+        ## subtract 1
+        lightinggrid[instruction[1]:instruction[3],instruction[2]:instruction[4]]-1
+      ## make it 0 if it is less than one.
+      lightinggrid[which(lightinggrid<0)]<-0
+    }else{
+      instruction<-as.numeric(unlist(str_split(str_replace(instruction,"toggle ",""),(" through |,"))))
+      ### because 1-1000 rather than 0-999
+      instruction<-instruction+1
+      lightinggrid[instruction[1]:instruction[3],instruction[2]:instruction[4]]<-
+        lightinggrid[instruction[1]:instruction[3],instruction[2]:instruction[4]]+2}}
+  part2<-sum(lightinggrid)
+  c(part1,part2)}
+
+```
+
+```{r}
+day6 <- day6answers(input)
+day6
+```

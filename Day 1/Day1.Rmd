@@ -1,0 +1,59 @@
+---
+title: "Day 1 Notebook"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(dplyr)
+library(stringr)
+library(tidyverse)
+library(igraph)
+library(ggplot2)
+library(rgl)
+library(ggraph)
+library(readr)
+library(ds4psy)
+library(numbers)
+options(scipen = 999)
+```
+
+
+## Part 1
+
+Because it goes up every "(" and down every ")", subtract the number of ")" from the number of "("
+
+```{r}
+input <- read_lines("Day1Sample.txt")
+input<-unlist(str_split(input,""))
+
+part1<-length(which(input=="("))-length(which(input==(")")))
+part1
+```
+## Part 2
+Parse the input one step at a time.  As soon as he's in the basement, exit
+```{r}
+whichfloor<-0
+part2<-0
+while(whichfloor>=0){
+  part2<-part2+1
+  if(input[part2]=="("){whichfloor<-whichfloor+1}else{whichfloor<-whichfloor-1}}
+part2
+```
+
+```{r}
+day1answers <-function(input){
+  part1<-length(which(input=="("))-length(which(input==(")")))
+  whichfloor<-0
+  part2<-0
+  while(whichfloor>=0){
+    part2<-part2+1
+    if(input[part2]=="("){whichfloor<-whichfloor+1}else{whichfloor<-whichfloor-1}}
+  c(part1,part2)}
+
+```
+
+```{r}
+day1 <- day1answers(input)
+day1
+```
