@@ -1,0 +1,94 @@
+---
+title: "Day 1 Notebook"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(dplyr)
+library(stringr)
+library(tidyverse)
+library(igraph)
+library(ggplot2)
+library(rgl)
+library(ggraph)
+library(readr)
+library(ds4psy)
+library(numbers)
+options(scipen = 999)
+```
+
+
+## Part 1
+Follow the santa - 
+```{r}
+input <- read_lines("Day3Sample.txt")
+santapath<-unlist(str_split(input,""))
+```
+
+Because we've seen part 2, creating this as a function that takes in the path & spits out the dataframe of places it has been
+
+```{r}
+
+steplist<-as.data.frame(rbind(c(0,0)))
+tracepath<-function(pth=santapath,stplst=steplist){
+  sp<-c(0,0)
+  for(i in 1:length(pth)){
+    switch(pth[i],
+           ### move around from place to place
+           "v"=sp<-sp+c(0,1),
+           "^"=sp<-sp+c(0,-1),
+           ">"=sp<-sp+c(1,0),
+           "<"=sp<-sp+c(-1,0),
+           message("problem\n"))
+    ### keep track of where it has been
+    stplst<-rbind(stplst,sp)}
+  stplst}
+
+part1<-tracepath()
+### make sure there are only unique 
+part1<-unique(part1)
+part1<-nrow(part1)
+part1
+```
+## Part 2
+Split the path into two, and re-run
+
+```{r}
+steplist<-as.data.frame(rbind(c(0,0)))
+realsanta<-santapath[c(TRUE,FALSE)]
+robosanta<-santapath[c(FALSE,TRUE)]
+### run with real santa
+part2<-tracepath(pth=realsanta,stplst=steplist)
+### run with robo santa
+part2<-tracepath(pth=robosanta,part2)
+
+part2<-unique(part2)
+part2<-nrow(part2)
+part2
+```
+
+```{r}
+day3answers <-function(input){
+  santapath<-unlist(str_split(input,""))
+  part1<-as.data.frame(rbind(c(0,0)))
+  part1<-tracepath(santapath,part1)
+  part1<-unique(part1)
+  part1<-nrow(part1)
+  part2<-as.data.frame(rbind(c(0,0)))
+  realsanta<-santapath[c(TRUE,FALSE)]
+  robosanta<-santapath[c(FALSE,TRUE)]
+  ### run with real santa
+  part2<-tracepath(pth=realsanta,stplst=steplist)
+  ### run with robo santa
+  part2<-tracepath(pth=robosanta,part2)
+  part2<-unique(part2)
+  part2<-nrow(part2)
+  c(part1,part2)}
+
+```
+
+```{r}
+day3 <- day3answers(input)
+day3
+```

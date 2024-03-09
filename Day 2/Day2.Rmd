@@ -1,0 +1,76 @@
+---
+title: "Day 2 Notebook"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(dplyr)
+library(stringr)
+library(tidyverse)
+library(igraph)
+library(ggplot2)
+library(rgl)
+library(ggraph)
+library(readr)
+library(ds4psy)
+library(numbers)
+options(scipen = 999)
+```
+
+
+## Part 1
+
+Find the area of the sides, and then add the area of the smallest side.
+
+```{r}
+input <- read_lines("Day2Sample.txt")
+
+boxsizes<-matrix(ncol=3,nrow=0)
+for(i in 1:length(input)){
+  boxsizes<-rbind(boxsizes,as.numeric(unlist(str_split(input[i],"x"))))}
+colnames(boxsizes)<-c("h","w","l")
+boxsizes<-as.data.frame(boxsizes)
+```
+Find the areas
+```{r}
+boxsizes<-boxsizes %>% rowwise %>%
+  mutate(hl=h*l,wl=w*l,hw=h*w) %>% mutate(paper=2*hl+2*hw+2*wl+min(hl,wl,hw))
+```
+part1 is the sum of paper
+```{r}
+part1<-sum(boxsizes$paper)
+part1
+```
+
+## Part 2
+Find the smallest perimiter by adding all three sizes, subtracting the max, and multiplying by 2.  Add that to the bow (volume)
+```{r}
+boxsizes <- boxsizes %>% rowwise %>%
+  mutate(ribbon=2*(h+w+l-max(h,w,l)),bow=h*w*l,total=ribbon+bow)
+part2<-sum(boxsizes$total)
+part2
+```
+
+
+
+```{r}
+day2answers <-function(input){
+  boxsizes<-matrix(ncol=3,nrow=0)
+  for(i in 1:length(input)){
+    boxsizes<-rbind(boxsizes,as.numeric(unlist(str_split(input[i],"x"))))}
+  colnames(boxsizes)<-c("h","w","l")
+  boxsizes<-as.data.frame(boxsizes)
+  boxsizes<-boxsizes %>% rowwise %>%
+    mutate(hl=h*l,wl=w*l,hw=h*w) %>% mutate(paper=2*hl+2*hw+2*wl+min(hl,wl,hw)) %>%
+    mutate(ribbon=2*(h+w+l-max(h,w,l)),bow=h*w*l,total=ribbon+bow)
+  part1<-sum(boxsizes$paper)
+  part2<-sum(boxsizes$total)
+  c(part1,part2)}
+
+```
+
+```{r}
+day2 <- day2answers(input)
+day2
+```
