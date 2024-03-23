@@ -1,0 +1,127 @@
+---
+title: "Day 7 Notebook"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(dplyr)
+library(stringr)
+library(tidyverse)
+library(igraph)
+library(ggplot2)
+library(rgl)
+library(ggraph)
+library(readr)
+library(ds4psy)
+library(numbers)
+library(collections)
+options(scipen = 999)
+```
+
+
+## Part 1
+```{r}
+input <- read_lines("Day7Sample.txt")
+```
+
+I think that this might make sense as a dictionary - store the values and then add, subtract, etc. as needed.
+Create the dictionary, then create the function that handles each of the types of instructions with the dictionary
+```{r}
+circuitkit<-collections::dict()
+
+runinstruction<-function(inst,d=circuitkit){
+  ###split the instructions into pieces.
+  ###need to handle AND, OR, LSHIFT, RSHIFT, NOT
+  inst<-unlist(str_split(inst," "))
+  if("AND" %in% inst){
+    ### check to see if numbers
+    if(str_detect(inst[1],"[:alpha:]",negate=TRUE)&&d$has(inst[3])){
+      d$set(inst[5],bitwAnd(as.numeric(inst[1]),d$get(inst[3])))}else{
+    if(d$has(inst[1])&&d$has(inst[3])){
+      d$set(inst[5],bitwAnd(d$get(inst[1]),d$get(inst[3])))}}
+  }else if("OR" %in% inst){
+    if(d$has(inst[1])&&d$has(inst[3])){
+      d$set(inst[5],bitwOr(d$get(inst[1]),d$get(inst[3])))}
+  }else if("NOT" %in% inst){
+    if(d$has(inst[2])){
+      d$set(inst[4],bitwNot(d$get(inst[2])))}
+  }else if("LSHIFT" %in% inst){
+    if(d$has(inst[1])){
+      d$set(inst[5],bitwShiftL(d$get(inst[1]),inst[3]))}
+  }else if("RSHIFT" %in% inst){
+    if(d$has(inst[1])){
+      d$set(inst[5],bitwShiftR(d$get(inst[1]),inst[3]))}
+  }else{
+    if(str_detect(inst[1],"[:alpha:]",negate=TRUE)){
+    d$set(inst[3],as.numeric(inst[1]))}else{
+      if(d$has(inst[1])){
+      d$set(inst[3],d$get(inst[1]))}}}
+  d}
+```
+
+
+This is actually very static, the values (once set) do not change - but it does take some time to set & reset them.  So the instructions run over and over and over as it is slowly populated.
+
+As soon as "a" exists, exit and that's part 1.
+```{r}
+i<-0
+while(!circuitkit$has("a")&&i<1000){
+for(i in 1:length(input)){
+  circuitkit<-runinstruction(input[i],circuitkit)}
+  i<-i+1}
+
+part1<-circuitkit$get("a")
+part1
+```
+## Part 2
+
+For part 2, set b to the value from a & start over with re-running the instructions (skipping the instruction that would give a value to b.)
+
+```{r}
+### reset the kit
+circuitkit<-collections::dict()
+
+### set b to a
+circuitkit$set("b",part1)
+
+i<-0
+while(!circuitkit$has("a")&&i<1000){
+  for(i in 1:length(input)){
+    ### don't do the instruction that resets b
+    if(str_sub(input[i],-2)!=" b"){
+      circuitkit<-runinstruction(input[i],circuitkit)}}
+  i<-i+1}
+
+part2<-circuitkit$get("a")
+part2
+```
+```{r}
+day7answers <-function(input){
+  circuitkit<-collections::dict()
+while(!circuitkit$has("a")){
+for(i in 1:length(input)){
+  circuitkit<-runinstruction(input[i],circuitkit)}}
+
+part1<-circuitkit$get("a")
+### reset the kit
+circuitkit<-collections::dict()
+
+### set b to a
+circuitkit$set("b",part1)
+
+while(!circuitkit$has("a")){
+  for(i in 1:length(input)){
+    ### don't do the instruction that resets b
+    if(str_sub(input[i],-2)!=" b"){
+      circuitkit<-runinstruction(input[i],circuitkit)}}}
+
+part2<-circuitkit$get("a")
+c(part1,part2)}
+
+```
+
+```{r}
+day7 <- day7answers(input)
+day7
+```

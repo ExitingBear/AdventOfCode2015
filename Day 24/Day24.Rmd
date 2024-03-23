@@ -1,0 +1,107 @@
+---
+title: "Day 24 Notebook"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(dplyr)
+library(stringr)
+library(tidyverse)
+library(readr)
+library(numbers)
+options(scipen = 999)
+```
+
+```{r}
+input<-c(1:5,7:11)
+pcks<-as.numeric(input)
+```
+
+
+## Part 1
+Taking a gamble - hopefully, all of the small groups will be "valid" (i.e., there is a way to sort the packages into groups.)  This isn't certain, but likely.  If so - then, the smallest product of the smallest groups will be the answer
+```{r}
+### sort from largest to smallest, to keep the space narrow.
+pcks<-sort(pcks,decreasing=TRUE)
+### target is 1/3rd of the packs
+target<-sum(pcks/3)
+### create a working data frame
+df<-data.frame(c(list(0,sum(pcks),0,1)))
+colnames(df)<-c("total","possible","packsize","QE")
+### tiny pack is the size of the smallest pack found so far
+tinypack<-length(pcks)
+### hits is the group of valid packs (adds to the target and all smallest found so far)
+hits<-as.data.frame(matrix(ncol=4,nrow=0))
+for(i in 1:length(pcks)){
+  ### total of how many have *not* been sorted yet.
+  rmn<-sum(pcks[i:length(pcks)])-pcks[i]
+  ncname<-c(colnames(df),paste0("P",pcks[i]))
+  ### copy the dataframe - add the first element of the list to one copy, don't to the other.
+  ### keep track of the total for each pack, the possible total for each pack, the QE and the number of packages
+  with<-df %>% rowwise %>%
+    mutate(total=total+pcks[i]) %>%
+    mutate(possible=rmn+total) %>%
+    mutate(packsize=packsize+1)%>%
+    mutate(QE=QE*pcks[i])%>%
+    mutate(x=pcks[i])
+  without<-df %>% rowwise %>%
+    mutate(possible=rmn+total,x=0)
+  df<-rbind(with,without)
+  ### make sure that recombining works
+  colnames(df)<-ncname
+  hits<-hits%>%mutate(x=0)
+  colnames(hits)<-ncname
+  ### package groups that meet the total to the list of valid hits
+  newhits<-df %>% filter(total==target)
+  hits<-rbind(hits,newhits)%>%ungroup%>%filter(packsize<=tinypack)
+  ### filter out anything that is too big, will never get big enough, or already has too many packages
+  df<-df %>% filter(total<target,possible>=target,packsize<=tinypack)
+  ### reset the max number of packages
+  tinypack<-min(hits$packsize,tinypack)}
+### again, filter out all but the smallest groups
+hits<-hits%>%ungroup%>%filter(packsize<=tinypack)
+hits
+```
+hits should be the all of the smallest possible size packages.  Because I BELIEVE that there must be some way of forming 3 packs with the smallest - the smallest QE should be the answer
+```{r}
+part1<-min(hits$QE)
+part1
+```
+## Part 2
+Same thing, target is 4 groups - 
+
+```{r}
+target<-sum(pcks/4)
+df<-data.frame(c(list(0,sum(pcks),0,1)))
+colnames(df)<-c("total","possible","packsize","QE")
+tinypack<-length(pcks)
+hits<-as.data.frame(matrix(ncol=4,nrow=0))
+for(i in 1:length(pcks)){
+  rmn<-sum(pcks[i:length(pcks)])-pcks[i]
+  ncname<-c(colnames(df),paste0("P",pcks[i]))
+  with<-df %>% rowwise %>%
+    mutate(total=total+pcks[i]) %>%
+    mutate(possible=rmn+total) %>%
+    mutate(packsize=packsize+1)%>%
+    mutate(QE=QE*pcks[i])%>%
+    mutate(x=pcks[i])
+  without<-df %>% rowwise %>%
+    mutate(possible=rmn+total,x=0)
+  df<-rbind(with,without)
+  colnames(df)<-ncname
+  hits<-hits%>%mutate(x=0)
+  colnames(hits)<-ncname
+  newhits<-df %>% filter(total==target)
+  hits<-rbind(hits,newhits)%>%ungroup%>%filter(packsize<=tinypack)
+  df<-df %>% filter(total<target,possible>=target,packsize<=tinypack)
+  tinypack<-min(hits$packsize,tinypack)}
+hits<-hits%>%ungroup%>%filter(packsize<=tinypack)
+hits
+```
+
+
+```{r}
+part2<-min(hits$QE)
+part2
+```

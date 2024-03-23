@@ -1,0 +1,88 @@
+---
+title: "Day 16 Notebook"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(dplyr)
+library(stringr)
+library(tidyverse)
+library(igraph)
+library(ggplot2)
+library(rgl)
+library(ggraph)
+library(readr)
+library(ds4psy)
+library(numbers)
+options(scipen = 999)
+```
+
+
+## Part 1
+Create a giant dataframe and start filtering
+```{r}
+input<-read_lines("../../AoCData/AOC2015/Day16.txt")
+
+sueframe<-as.data.frame(matrix(ncol=10,nrow=0))
+part1<-c()
+i<-0
+while(i<length(input)){
+  i<-i+1
+  ### if detect the string, but not the right number, then break
+  if(str_detect(input[i],"children:")&& !str_detect(input[i],"children: 3")){next}
+  if(str_detect(input[i],"cats:")&& !str_detect(input[i],"cats: 7")){next}
+  if(str_detect(input[i],"samoyeds:")&& !str_detect(input[i],"samoyeds: 3")){next}
+  if(str_detect(input[i],"pomeranians:")&& !str_detect(input[i],"pomeranians: 3")){next}
+  if(str_detect(input[i],"akitas:")&& !str_detect(input[i],"akitas: 0")){next}
+  if(str_detect(input[i],"vizslas:")&& !str_detect(input[i],"vizslas: 0")){next}
+  if(str_detect(input[i],"goldfish:")&& !str_detect(input[i],"goldfish: 5")){next}
+  if(str_detect(input[i],"trees:")&& !str_detect(input[i],"trees: 3")){next}
+  if(str_detect(input[i],"cars:")&& !str_detect(input[i],"cars: 2")){next}
+  if(str_detect(input[i],"perfumes:")&& !str_detect(input[i],"perfumes: 1")){next}
+  part1<-c(part1,input[i])
+  }
+part1
+
+```
+## Part 2
+First filter out the things that are still true (children,cars, perfumes,akitas,vizslas,samoyeds)
+
+```{r}
+smallsue<-c()
+i<-0
+while(i<length(input)){
+  i<-i+1
+  ### if detect the string, but not the right number, then break
+  if(str_detect(input[i],"children:")&& !str_detect(input[i],"children: 3")){next}
+  if(str_detect(input[i],"samoyeds:")&& !str_detect(input[i],"samoyeds: 2")){next}
+  if(str_detect(input[i],"akitas:")&& !str_detect(input[i],"akitas: 0")){next}
+  if(str_detect(input[i],"vizslas:")&& !str_detect(input[i],"vizslas: 0")){next}
+  if(str_detect(input[i],"cars:")&& !str_detect(input[i],"cars: 2")){next}
+  if(str_detect(input[i],"perfumes:")&& !str_detect(input[i],"perfumes: 1")){next}
+  smallsue<-c(smallsue,input[i])
+  }
+
+length(smallsue)
+
+```
+And now being down to fewer sues, refilter by the new values (trees > 3, cats > 7, goldfish < 5, pomeranians < 3)
+
+```{r}
+part2<-c()
+i<-0
+smallsue<-str_squish(sapply(smallsue,function(x){str_replace_all(x,"[,:]"," ")}))
+while(i<length(smallsue)){
+  i<-i+1
+  sue<-unlist(str_split(smallsue[i]," "))
+  trees<-as.numeric(sue[as.numeric(which(sue=="trees"))+1])
+  cats<-as.numeric(sue[as.numeric(which(sue=="cats"))+1])
+  goldfish<-as.numeric(sue[as.numeric(which(sue=="goldfish"))+1])
+  pomeranians<-as.numeric(sue[as.numeric(which(sue=="pomeranians"))+1])
+  if((length(trees)>0&&trees<=3)||(length(cats)>0&&cats<=7)||(length(goldfish)>0&&goldfish>=5)||(length(pomeranians)>0&&pomeranians>=3)){next}
+  part2<-c(part2,smallsue[i])}
+part2
+
+
+```
+

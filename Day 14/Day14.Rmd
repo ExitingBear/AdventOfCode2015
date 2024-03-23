@@ -1,0 +1,102 @@
+---
+title: "Day 14 Notebook"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(dplyr)
+library(stringr)
+library(tidyverse)
+library(igraph)
+library(ggplot2)
+library(rgl)
+library(ggraph)
+library(readr)
+library(ds4psy)
+library(numbers)
+library(reshape2)
+options(scipen = 999)
+```
+
+
+## Part 1
+```{r}
+input<-read_lines("Day14Sample.txt")
+```
+
+Break down the input into a list of vectors of speed, fly time, and rest time:
+
+```{r}
+flyvecs<-lapply(input,function(x){
+  c(as.numeric(word(x,4)),as.numeric(word(x,7)),as.numeric(word(x,14)))})
+```
+
+create a function that gives distance given the speed/flytime/resttime vector and time.
+
+```{r}
+howfar<-function(v,t){
+  sp<-v[1]
+  ft<-v[2]
+  rt<-v[3]
+  ### the cycle is fly time + vt
+  cycle<-ft+rt
+  ### time racing is the number of cycles*ft + the minimum of time MOD cycle and ft
+  racetime<-(ft*(t%/%cycle))+min(t%%cycle,ft)
+  d<-racetime*sp
+  d}
+```
+
+run that against the input
+
+```{r}
+part1<-sapply(flyvecs,function(x){howfar(x,1000)})
+part1
+part1<-max(part1)
+part1
+```
+### Part 2
+
+Create a second function - takes in the length of the race and the fly/vectors.  Returns the number of points
+
+```{r}
+howmanypoints<-function(vs=flyvecs,t){
+  outvec<-rep(0,length(vs))
+  for(i in 1:t){
+    ### a is the distances at that time
+    a<-sapply(vs,function(x){howfar(x,i)})
+    
+    a<-sapply(a,function(x){if(x==max(a)){1}else{0}})
+    outvec<-outvec+a}
+outvec}
+```
+
+run this against the input
+
+```{r}
+part2<-howmanypoints(flyvecs,1000)
+part2
+part2<-max(part2)
+part2
+```
+
+```{r,echo=FALSE}
+input<-read_lines("../../AoCData/AOC2015/Day14.txt")
+flyvecs<-lapply(input,function(x){
+  c(as.numeric(word(x,4)),as.numeric(word(x,7)),as.numeric(word(x,14)))})
+df<-as.data.frame(matrix(ncol=(1+length(flyvecs)),nrow=0))
+for(i in 1:2503){
+  a<-sapply(flyvecs,function(x){howfar(x,i)})
+  df<-rbind(df,c(i,a))}
+
+dfnames<-sapply(input,function(x){word(x,1)})
+colnames(df)<-c("time",dfnames)
+
+dfmelt<-melt(df,id.vars=c("time"))
+colnames(dfmelt)<-c("time","reindeer","distance")
+
+ggplot(dfmelt)+
+  geom_line(aes(x=time,y=distance,group=reindeer,colour=reindeer))
+
+```
+

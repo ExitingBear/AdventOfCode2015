@@ -1,0 +1,92 @@
+---
+title: "Day 11 Notebook"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(dplyr)
+library(stringr)
+library(tidyverse)
+library(igraph)
+library(ggplot2)
+library(rgl)
+library(ggraph)
+library(readr)
+library(ds4psy)
+library(numbers)
+options(scipen = 999)
+```
+
+
+## Part 1
+
+The idea:
+first change the string to a vector of characters
+Then, change the characters to numbers (easier to add)
+Then, check to see if it is valid
+
+Function for incrementing
+```{r}
+increm<-function(v){
+  ev<-length(v)
+  ### add 1 to v
+  v[ev]<-v[ev]+1
+  ### for each in the vector
+  for(i in ev:1){
+    ### check if 27, if so, make it 1 and add 1 to the next
+    if(v[i]==27){
+      v[i]<-1
+      if(i!=1){v[i-1]<-v[i-1]+1}else{v<-c(1,v)}}
+    ### check if i, o, or l and if so, increase
+    if(v[i]==9){v[i]<-10} #i
+    if(v[i]==15){v[i]<-16} #o
+    if(v[i]==12){v[i]<-13} #l
+  }
+  return(v)}
+```
+Function for validating
+
+```{r}
+## first check for doubles, then for sequences - the string is short enough for this to be reasonable
+validator<-function(v){
+  numdoubles<-0
+  i<-1
+
+  while(numdoubles<2&&i<=(length(v)-1)){
+    if(v[i]==v[i+1]){
+      numdoubles<-numdoubles+1
+      i<-i+2
+    }else{i<-i+1}}
+  isvalid<-FALSE
+  i<-1
+  while(isvalid==FALSE&&numdoubles>=2&&i<=(length(v)-2)){
+    if(v[i]+1==v[i+1]&&v[i]+2==v[i+2]){
+      isvalid<-TRUE
+      }else{i<-i+1}}
+  isvalid}
+```
+
+Tie the functions together, increment, validate, spit it out as soon as a valid pass is found.
+
+```{r}
+nextpass<-function(v){
+   numpass<-unlist(str_split(v,""))
+   numpass<-sapply(numpass,function(x){which(letters %in% x)})
+   okay<-FALSE
+   while(!okay){
+     numpass<-increm(numpass)
+     okay<-validator(numpass)}
+   str_flatten(letters[numpass])}
+```
+
+```{r}
+part1<-nextpass("abcdefgh")
+part1
+```
+```{r}
+part2<-nextpass(part1)
+part2
+```
+
+

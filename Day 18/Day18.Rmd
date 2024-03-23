@@ -1,0 +1,123 @@
+---
+title: "Day 18 Notebook"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(dplyr)
+library(stringr)
+library(tidyverse)
+library(igraph)
+library(ggplot2)
+library(rgl)
+library(ggraph)
+library(readr)
+library(ds4psy)
+library(numbers)
+options(scipen = 999)
+```
+
+
+## Part 1
+
+Change the grid to a matrix - but to make things less complex, the matrix will be 0's and 1's (for off and on) and be slightly bigger with a row of 0's around the edge
+
+
+```{r}
+input<-read_lines("Day18Sample.txt")
+
+lightgrid<-matrix(NA,nrow=2+length(input),ncol=2+nchar(input[1]))
+lightgrid[1,]<-0
+lightgrid[,1]<-0
+lightgrid[nrow(lightgrid),]<-0
+lightgrid[,ncol(lightgrid)]<-0
+for(i in 1:length(input)){
+  x<-input[i]
+  x<-str_replace_all(x,"\\.","0")
+  x<-str_replace_all(x,"#","1")
+  x<-as.numeric(unlist(str_split(x,"")))
+  lightgrid[i+1,2:(ncol(lightgrid)-1)]<-x}
+```
+
+Quick function that takes in a matrix and returns the animated matrix:
+
+```{r}
+animate<-function(x=lightgrid){
+  newgrid<-matrix(ncol=ncol(x),nrow=nrow(x))
+  newgrid[1,]<-0
+  newgrid[,1]<-0
+  newgrid[nrow(newgrid),]<-0
+  newgrid[,ncol(newgrid)]<-0
+  for(i in 2:(ncol(newgrid)-1)){
+    for(j in 2:(nrow(newgrid)-1)){
+      ctr<-x[i,j]
+      rng<-sum(x[(i-1):(i+1),(j-1):(j+1)])-ctr
+      if(ctr==0){
+        if(rng==3){newgrid[i,j]<-1}else{newgrid[i,j]<-0}
+      }else{if(rng==2||rng==3){newgrid[i,j]<-1}else{newgrid[i,j]<-0}}
+      }}
+  newgrid}
+```
+then another to repeat the animations:
+
+```{r}
+repeatanimate<-function(x=lightgrid,reps=100){
+  a<-x
+  for(i in 1:reps){
+    a<-animate(a)}
+  a}
+```
+Part1 is the sum of the repeated animation
+```{r}
+part1<-repeatanimate()
+part1<-sum(part1)
+part1
+```
+## Part 2
+With the corners stuck, what happens?
+```{r}
+stuck<-function(x=lightgrid){
+  newgrid<-matrix(ncol=ncol(x),nrow=nrow(x))
+  newgrid[1,]<-0
+  newgrid[,1]<-0
+  newgrid[nrow(newgrid),]<-0
+  newgrid[,ncol(newgrid)]<-0
+  for(i in 2:(ncol(newgrid)-1)){
+    for(j in 2:(nrow(newgrid)-1)){
+      ctr<-x[i,j]
+      rng<-sum(x[(i-1):(i+1),(j-1):(j+1)])-ctr
+      if(ctr==0){
+        if(rng==3){newgrid[i,j]<-1}else{newgrid[i,j]<-0}
+      }else{if(rng==2||rng==3){newgrid[i,j]<-1}else{newgrid[i,j]<-0}}
+    }}
+  ###change the corners to 1, no matter what
+  newgrid[2,2]<-1
+  newgrid[2,(nrow(newgrid)-1)]<-1
+  newgrid[(ncol(newgrid)-1),2]<-1
+  newgrid[(ncol(newgrid)-1),(nrow(newgrid)-1)]<-1
+  newgrid}
+```
+
+```{r}
+stuckgrid<-lightgrid
+  stuckgrid[2,2]<-1
+  stuckgrid[2,(nrow(stuckgrid)-1)]<-1
+  stuckgrid[(ncol(stuckgrid)-1),2]<-1
+  stuckgrid[(ncol(stuckgrid)-1),(nrow(stuckgrid)-1)]<-1
+
+```
+and a new repeating function
+```{r}
+stuckrepeat<-function(x=stuckgrid,reps=100){
+  a<-x
+  for(i in 1:reps){
+    a<-stuck(a)}
+  a}
+```
+Part 2 is the sum of the stuck animation
+```{r}
+part2<-sum(stuckrepeat())
+part2
+```
+

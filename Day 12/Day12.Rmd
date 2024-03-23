@@ -1,0 +1,67 @@
+---
+title: "Day 12 Notebook"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(dplyr)
+library(stringr)
+library(tidyverse)
+library(igraph)
+library(ggplot2)
+library(rgl)
+library(ggraph)
+library(readr)
+library(ds4psy)
+library(numbers)
+options(scipen = 999)
+```
+
+
+## Part 1
+For part 1, find all the numbers in the document and add them together:
+
+```{r}
+input<-read_lines("Day12Sample.txt")
+nums<-c("-","0","1","2","3","4","5","6","7","8","9") ## include all digits and the negative sign
+### replace everything that isn't a number or a negative sign with a space
+part1<-str_replace_all(input,"[^0123456789-]"," ")
+### remove the extra spaces, turn it into a numeric vector and add it up
+part1<-sum(as.numeric(unlist(str_split(str_squish(part1)," "))))
+part1
+```
+
+## Part 2
+I should know more about JSON than I do.  But I don't, so not going to use it.  Instead, identify things with the pattern *:"red"* inside curly brackets and then delete everything within those curly brackets.
+
+```{r}
+### Create a function "pullobject"
+pullobject<-function(st){
+  #  if there are any left curly brackets,
+  while(str_count(st,"\\{")>0){
+    ### find the position of the first right bracket
+    firstrightbracket<-str_locate(st,"\\}")[1,2]
+    ### find all the left brackets up to that point and pick the furthest right of those
+    closestleftbracket<-tail(str_locate_all(str_sub(st,1,firstrightbracket),"\\{")[[1]],1)[,2]
+    ### if it has the a :"red" inside (property "red") delete from bracket to bracket
+    if(str_detect(str_sub(st,closestleftbracket,firstrightbracket),"\":\"red\"")){
+      st<-str_c(str_sub(st,1,closestleftbracket-1),str_sub(st,firstrightbracket+1,nchar(st)))
+    }else{
+      ### if not, change the brackets to greater than and less than signs
+      str_sub(st,firstrightbracket,firstrightbracket)<-">"
+      str_sub(st,closestleftbracket,closestleftbracket)<-"<"}}
+  ### return the altered string
+  st}
+```
+
+
+Run input on through pullobject to get a new string and add the numbers.   This does not work on the sample data.
+```{r,eval=FALSE}
+part2<-pullobject(input)
+part2<-str_replace_all(part2,"[^0123456789-]"," ")
+part2<-sum(as.numeric(unlist(str_split(str_squish(part2)," "))))
+part2
+```
+
+
