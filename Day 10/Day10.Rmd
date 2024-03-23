@@ -1,0 +1,60 @@
+---
+title: "Day 10 Notebook"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(dplyr)
+library(stringr)
+library(tidyverse)
+library(igraph)
+library(ggplot2)
+library(rgl)
+library(ggraph)
+library(readr)
+library(ds4psy)
+library(numbers)
+options(scipen = 999)
+```
+
+
+## Part 1 & 2
+
+First a function that does "look/see"
+```{r}
+
+lns<-function(gamevec){
+  i<-1
+  num<-0
+  counter<-0
+  outline<-c()
+  while(i<=length(gamevec)){
+    if(gamevec[i]==num){
+      counter<-counter+1}else{
+        outline<-c(outline,counter,num)
+        counter<-1
+        num<-gamevec[i]}
+    i<-i+1}
+  outline<-c(outline,counter,num)
+  outline<-outline[3:length(outline)]
+  outline}
+```
+
+Start to run with my puzzle input
+
+```{r}
+multilns<-function(st,reps){
+  vec<-as.numeric(unlist(str_split(st,"")))
+  for(i in 1:reps){
+    vec<-lns(vec)}
+  answer<-str_flatten(vec)
+  answer}
+```
+
+```{r}
+parts <-multilns("1",10)
+parts<-nchar(parts)
+parts
+```
+I'm not proud of this.  But it did work.

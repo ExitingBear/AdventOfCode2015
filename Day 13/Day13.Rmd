@@ -1,0 +1,181 @@
+---
+title: "Day 13 Notebook"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(dplyr)
+library(stringr)
+library(tidyverse)
+library(igraph)
+library(ggplot2)
+library(rgl)
+library(ggraph)
+library(readr)
+library(ds4psy)
+library(numbers)
+library(combinat)
+library(collections)
+options(scipen = 999)
+```
+
+
+## Part 1
+
+Pull in the data:
+```{r}
+input<-read_lines("Day13Sample.txt")
+#input<-read_lines("../../AoCData/AOC2015/Day13.txt")
+
+happyframe<-as.data.frame(cbind(word(input,1),
+                                str_sub(word(input,11),1,-2),
+                                word(input,3),word(input,4)))
+colnames(happyframe)<-c("p1","p2","gain","points")
+
+happyframe<-happyframe %>% mutate(points=as.numeric(points)) %>%
+  rowwise %>% mutate(points=ifelse(gain=="gain",points,-points))
+```
+
+
+BFS for happiness
+```{r}
+people<-unique(unlist(happyframe$p1))
+```
+create a second frame for the combined happiness
+
+```{r}
+happycombo<-as.data.frame(matrix(ncol=3,nrow=0))
+for(i in 1:(length(people)-1)){
+  for(j in (i+1):length(people)){
+    x<-happyframe %>% filter(p1==people[i]||p1==people[j]) %>%
+      filter(p2==people[i]||p2==people[j])
+    x<-sum(x$points)
+    happycombo<-rbind(happycombo,c(people[i],people[j],x))
+    happycombo<-rbind(happycombo,c(people[j],people[i],x))}}
+colnames(happycombo)<-c("p1","p2","happy")
+happycombo$happy<-as.numeric(happycombo$happy)
+```
+
+```{r}
+happyseats<-function(peeps=people,happs=happycombo){
+  pq<-priority_queue()
+  happiest<-max(happs$happy)
+  for(i in 1:length(peeps)){
+    x<-list(peeps[i],0)
+    pq$push(x,priority=length(peeps)*happiest)}
+  i<-1
+  while(pq$size()>0){
+    who<-pq$pop()
+    seated<-who[[1]]
+    nowhappy<-who[[2]]
+    if(length(seated)==(length(peeps)+1)){return(list(nowhappy,seated))
+    }else if(length(seated)==length(peeps)){
+      nwho<-c(seated,seated[1])
+      morehappy<-happs %>% filter(p1==seated[1],p2==seated[length(peeps)])
+      morehappy<-morehappy$happy
+      nexthappy<-nowhappy+morehappy
+      newpri<-nexthappy
+      pq$push(list(nwho,nexthappy),priority=nexthappy)
+    }else{
+      minihc<-happs %>% filter(p1==tail(seated,1),!(p2%in%seated))
+      for(np in 1:nrow(minihc)){
+        nwho<-c(seated,minihc[np,]$p2)
+        nhappy<-nowhappy+minihc[np,]$happy
+        newpri<-nhappy+(happiest*(length(peeps)-length(nwho)))
+        pq$push(list(nwho,nhappy),priority=newpri)}}
+    i<-i+1}} 
+
+p1<-happyseats()
+```
+
+```{r}
+cat(p1[[2]],"\n")
+part1<-p1[[1]]
+part1
+```
+```{r,echo=FALSE,warning=FALSE}
+p1gr<-as.data.frame(matrix(ncol=3,nrow=0))
+so<-p1[[2]]
+for(i in 1:(length(so)-1)){
+  p1gr<-rbind(p1gr,list(p1=so[i],
+                        p2=so[i+1],
+                        weight=happyframe$points[intersect(which(happyframe$p1==so[i]),which(happyframe$p2==so[i+1]))]))
+  p1gr<-rbind(p1gr,list(p1=so[i+1],
+                        p2=so[i],
+                        weight=happyframe$points[intersect(which(happyframe$p1==so[i+1]),which(happyframe$p2==so[i]))]))}
+
+p1gr<-p1gr %>% rowwise%>%mutate(clr=ifelse(weight>0,"##00FF00","##FF0000"))
+
+p1gr2<-graph_from_data_frame(p1gr)
+```
+
+
+```{r,echo=FALSE,warning=FALSE}
+ggraph(p1gr2,layout="circle")+
+  geom_edge_parallel(aes(label=weight,
+                         start_cap=label_rect(node1.name),
+                         end_cap=label_rect(node2.name)),
+                     label_dodge = unit(-3.5, 'mm'),
+                     angle_calc = 'along',
+                     arrow=arrow(length=unit(4,"mm")))+
+  geom_node_text(aes(label=name))
+
+```
+
+
+## Part 2
+Add me to the list of people & to the list of combos.  I could just run from me to me (and because I am 0 at each end, it would not need to be a full loop just a straight line.  But, that would mean re-writing rather than just doing the same thing with different input.)
+
+```{r}
+p2combo<-happycombo
+for(i in 1:length(people)){
+  p2combo<-rbind(p2combo,list(p1="Me",p2=people[i],happy=0))
+  p2combo<-rbind(p2combo,list(p1=people[i],p2="Me",happy=0))}
+p2people<-c(people,"Me")
+```
+
+and re-run
+```{r}
+p2<-happyseats(p2people,p2combo)
+cat(p2[[2]],"\n")
+part2<-p2[[1]]
+part2
+```
+
+```{r,echo=FALSE,warning=FALSE}
+p1gr<-as.data.frame(matrix(ncol=3,nrow=0))
+so<-p2[[2]]
+for(i in 1:(length(so)-1)){
+  if(so[i]=="Me"||so[i+1]=="Me"){
+  p1gr<-rbind(p1gr,list(p1=so[i],
+                        p2=so[i+1],
+                        weight=0))
+  p1gr<-rbind(p1gr,list(p1=so[i+1],
+                        p2=so[i],
+                        weight=0))}else{
+  p1gr<-rbind(p1gr,list(p1=so[i],
+                        p2=so[i+1],
+                        weight=happyframe$points[intersect(which(happyframe$p1==so[i]),which(happyframe$p2==so[i+1]))]))
+  p1gr<-rbind(p1gr,list(p1=so[i+1],
+                        p2=so[i],
+                        weight=happyframe$points[intersect(which(happyframe$p1==so[i+1]),which(happyframe$p2==so[i]))]))}}
+
+p1gr<-p1gr %>% rowwise%>%mutate(clr=ifelse(weight>0,"##00FF00","##FF0000"))
+
+p1gr2<-graph_from_data_frame(p1gr)
+```
+
+
+
+```{r,echo=FALSE,warning=FALSE}
+ggraph(p1gr2,layout="circle")+
+  geom_edge_parallel(aes(label=weight,
+                         start_cap=label_rect(node1.name),
+                         end_cap=label_rect(node2.name)),
+                     label_dodge = unit(-3.5, 'mm'),
+                     angle_calc = 'along',
+                     arrow=arrow(length=unit(4,"mm")))+
+  geom_node_text(aes(label=name))
+
+```

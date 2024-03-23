@@ -1,0 +1,108 @@
+---
+title: "Day 9 Notebook"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(dplyr)
+library(stringr)
+library(tidyverse)
+library(igraph)
+library(ggplot2)
+library(rgl)
+library(ggraph)
+library(readr)
+library(ds4psy)
+library(numbers)
+library(collections)
+options(scipen = 999)
+```
+
+
+## Part 1
+
+First, set up the data:
+```{r}
+input <- read_lines("Day9Sample.txt")
+
+point2point<-as.data.frame(matrix(ncol=3,nrow=0))
+
+for(i in 1:length(input)){
+  seg<-unlist(str_split(input[i]," "))
+  point2point<-rbind(point2point,c(seg[1],seg[3],seg[5]))
+  point2point<-rbind(point2point,c(seg[3],seg[1],seg[5]))}
+colnames(point2point)<-c("p1","p2","ds")
+point2point$ds<-as.numeric(point2point$ds)
+### put in order from smallest to largest distance - need for later
+point2point<-arrange(point2point,ds)
+```
+
+Basic BFS algorithm to find the shortest path.
+Put all paths so far in a queue, sorted from shortest to longest. Each time, take the shortest (current) path, find the places it can travel without going back. Put them (and the new distances) on the queue.  As soon as a current path is taken that hits all spots, there's no shorter path, so return it (and its distance)
+
+
+```{r}
+everywhere<-unlist(unique(point2point$p1))
+tracksanta<-function(places=everywhere,mp=point2point){
+  checknext<-priority_queue()
+  for(i in 1:length(places)){
+    r<-list(c(everywhere[i]),0)
+    checknext$push(r,priority=0)}
+  while(checknext$size()>0){
+    where<-checknext$pop()
+    pth<-where[[1]]
+    d<-where[[2]]
+    if(all(places %in% pth)){
+      return(list(pth,d))}else{
+        minimp <- mp %>% filter(p1==tail(pth,1),!(p2%in%pth))
+        for(ep in 1:nrow(minimp)){
+          npth<-c(pth,minimp[ep,]$p2)
+          nd<-d+minimp[ep,]$ds
+          npush<-list(npth,nd)
+          checknext$push(npush,priority=-nd)}}}
+  return()}
+```
+
+Find the shortest distance - 
+
+```{r}
+santa_path<-tracksanta()
+part1<-santa_path[[2]]
+santa_path[[1]]
+part1
+```
+## Part 2
+Find the longest distance:
+Basically, shortest, but in the other direction
+Put all paths so far in a queue, sorted from longest to shortest possible distance (the current distance + the number of jumps left * max distance between segments.) Each time, take the longest possible path, find all places to travel without going back, put them back on the queue.  As soon as a current path is taken that hits all spots, there's no possible way there could be a longer path, so return the path (and the distance)
+
+```{r}
+tracklongsanta<-function(places=everywhere,mp=point2point){
+  maxseg<-max(mp$d)
+  checknext<-priority_queue()
+  for(i in 1:length(places)){
+    r<-list(c(everywhere[i]),0)
+    checknext$push(r,priority=7*maxseg)}
+  while(checknext$size()>0){
+    where<-checknext$pop()
+    pth<-where[[1]]
+    d<-where[[2]]
+    if(all(places %in% pth)){
+      return(list(pth,d))}else{
+        minimp <- mp %>% filter(p1==tail(pth,1),!(p2%in%pth))
+        for(ep in 1:nrow(minimp)){
+          npth<-c(pth,minimp[ep,]$p2)
+          nd<-d+minimp[ep,]$ds
+          newpri<-nd+((8-length(npth))*maxseg)
+          npush<-list(npth,nd)
+          checknext$push(npush,priority=newpri)}}}}
+```
+
+Run for the longest path
+```{r}
+longestpath<-tracklongsanta()
+part2<-longestpath[[2]]
+longestpath[[1]]
+part2
+```

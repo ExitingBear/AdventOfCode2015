@@ -1,0 +1,74 @@
+---
+title: "Day 19 Notebook"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(dplyr)
+library(stringr)
+library(readr)
+library("textworks")
+options(scipen = 999)
+```
+
+
+## Part 1
+
+```{r}
+index<-read_lines("Day19Sample.txt")
+blankline<-which(index=="")
+molecule<-index[blankline+1]
+replacements<-index[1:(blankline-1)]
+```
+
+Go through each replacement 1 at a time and replace each thing in the molecule one at a time.  Throw them all into a vector
+
+```{r,message=FALSE}
+newmolecules<-c()
+for(i in 1:length(replacements)){
+  replacer<-replacements[i]
+  old<-word(replacer,1)
+  new<-word(replacer,3)
+  ct<-str_count(molecule,old)
+  if(ct>0){
+  for(j in 1:ct){
+    nextmolecule<-str_replace_nth(molecule,old,new,j)
+    newmolecules<-c(newmolecules,nextmolecule)}}}
+```
+```{r}
+part1<-length(unique(newmolecules))
+part1
+```
+## Part 2
+
+Try running the rules until you get an e or it is no longer reducible - over, say, 1000 times, it is likely that the lowest answer might be the lowest possible answer. (I stole this idea.  It works.)
+
+```{r, eval=FALSE}
+lowcount<-c()
+for (i in 1:1000){
+  ### set the number of replacements
+  cnt<-0
+  mc<-molecule
+  nc<-1
+  ### reorder the rules for replacing things
+  rules<-sample(replacements)
+  ### while not everything has been replace AND there isn't an e yet - 
+  while(mc!="e"&&nc>0){
+    ### set a counter to tell if there's no possible replacements left
+    nc<-0
+    ### run through the rules one at a time
+    for(j in 1:length(rules)){
+      ### find the number of things that can be replaced in the rule
+      nr<-str_count(mc,(word(rules[j],3)))
+      ### add that number to the count, and the number of replacements this go
+      cnt<-cnt+nr
+      nc<-nc+nr
+      ### do the replacement
+      if(nr>0){mc<-str_replace_all(mc,word(rules[j],3),word(rules[j],1))}}}
+  ### add the total number of replacements to the vector
+  if(mc=="e"){lowcount<-c(lowcount,cnt)}}
+lowcount
+min(lowcount)
+```
+

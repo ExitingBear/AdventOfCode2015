@@ -1,0 +1,80 @@
+---
+title: "Day 15 Notebook"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+library(lpSolveAPI)
+library(ggplot2)
+library(rgl)
+library(ggraph)
+library(readr)
+library(ds4psy)
+library(numbers)
+library(knitr)
+library(dplyr)
+library(stringr)
+library(tidyverse)
+library(igraph)
+options(scipen = 999)
+```
+
+
+
+## Part 1
+
+```{r, message=FALSE, error=FALSE, warning=FALSE}
+input<-read_lines("Day15Sample.txt")
+cookieframe<-matrix(ncol=0,nrow=5)
+ingredient<-c()
+for(i in 1:length(input)){
+  x<-as.numeric(c(str_sub(word(input[i],3),1,-2),
+       str_sub(word(input[i],5),1,-2),
+       str_sub(word(input[i],7),1,-2),
+       str_sub(word(input[i],9),1,-2),
+       str_sub(word(input[i],11),1,-1)))
+  cookieframe<-cbind(cookieframe,x)
+  ingredient<-c(ingredient,str_sub(word(input[i],1),1,-2))}
+
+colnames(cookieframe)<-1:ncol(cookieframe)
+cookieframe<-as.data.frame(cookieframe)
+colnames(cookieframe)<-ingredient
+```
+
+Decided to brute force, because I can (this is obviously not a generic solution and does not work with the sample data because it has four ingredients, not two)
+
+
+```{r}
+part1<-0
+for(Frosting in 0:100){
+  for(Candy in 0:(100-Frosting)){
+    for(Butterscotch in 0:(100-Frosting-Candy)){
+      Sugar<-100-Frosting-Candy-Butterscotch
+      score<-Frosting*cookieframe$Frosting[1:4]+
+        Candy*cookieframe$Candy[1:4]+
+        Butterscotch*cookieframe$Butterscotch[1:4]+
+        Sugar*cookieframe$Sugar[1:4]
+      if(all(score>0)){part1<-max(prod(score),part1)}}}}
+part1
+```
+## Part 2:
+make sure there are exactly 500 calories.  Again, brute forced.  And again - doesn't work with the sample data.
+
+```{r eval=FALSE}
+part2<-0
+for(Frosting in 0:100){
+  for(Candy in 0:(100-Frosting)){
+    for(Butterscotch in 0:(100-Frosting-Candy)){
+      Sugar<-100-Frosting-Candy-Butterscotch
+      score<-Frosting*cookieframe$Frosting[1:4]+
+        Candy*cookieframe$Candy[1:4]+
+        Butterscotch*cookieframe$Butterscotch[1:4]+
+        Sugar*cookieframe$Sugar[1:4]
+      calories<-Frosting*cookieframe$Frosting[5]+
+        Candy*cookieframe$Candy[5]+
+        Butterscotch*cookieframe$Butterscotch[5]+
+        Sugar*cookieframe$Sugar[5]
+      if(all(score>0)&&calories==500){part2<-max(prod(score),part2)}}}}
+part2
+```
+

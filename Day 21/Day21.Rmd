@@ -1,0 +1,125 @@
+---
+title: "Day 21 Notebook"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(dplyr)
+library(stringr)
+library(tidyverse)
+library(igraph)
+library(ggplot2)
+library(rgl)
+library(ggraph)
+library(readr)
+library(ds4psy)
+library(numbers)
+options(scipen = 999)
+```
+
+
+## Part 1
+Because there are a limited number of combinations - we'll just expand them all out.
+```{r}
+input<-read_lines("../../AocData/AOC2015/Day21.txt")
+blanklines<-which(input=="")
+```
+Start by creating 3 data frames - one for each thing:
+```{r}
+### weapons
+weapons<-as.data.frame(matrix(ncol=4,nrow=0))
+for(i in 2:(blanklines[1]-1)){
+  a<-input[i]
+  a<-unlist(str_split(str_squish(a)," "))
+  weapons<-rbind(weapons,a)}
+colnames(weapons)<-c("weapon","wcost","wdamage","wdefense")
+weapons$wcost<-as.numeric(weapons$wcost)
+weapons$wdamage<-as.numeric(weapons$wdamage)
+weapons$wdefense<-as.numeric(weapons$wdefense)
+
+### armor
+armor<-as.data.frame(list("no armor",0,0,0))
+for(i in (blanklines[1]+2):(blanklines[2]-1)){
+  a<-input[i]
+  a<-unlist(str_split(str_squish(a)," "))
+  armor<-rbind(armor,a)}
+colnames(armor)<-c("armor","acost","adamage","adefense")
+armor$acost<-as.numeric(armor$acost)
+armor$adamage<-as.numeric(armor$adamage)
+armor$adefense<-as.numeric(armor$adefense)
+
+
+ring<-as.data.frame(list("no ring",0,0,0))
+for(i in (blanklines[2]+2):(length(input))){
+  a<-input[i]
+  a<-str_replace(a," ","")
+  a<-unlist(str_split(str_squish(a)," "))
+  ring<-rbind(ring,a)}
+
+rings<-as.data.frame(list("no ring",0,0,0,"no ring",0,0,0))
+for(i in 1:(nrow(ring)-1)){
+  for(j in (i+1):nrow(ring)){
+    x<-unname(append(ring[i,],ring[j,]))
+    rings<-rbind(rings,x)}}
+colnames(rings)<-c("ring1","r1cost","r1damage","r1defense","ring2","r2cost","r2damage","r2defense")
+rings$r1cost<-as.numeric(rings$r1cost)
+rings$r2cost<-as.numeric(rings$r2cost)
+rings$r1damage<-as.numeric(rings$r1damage)
+rings$r2damage<-as.numeric(rings$r2damage)
+rings$r1defense<-as.numeric(rings$r1defense)
+rings$r2defense<-as.numeric(rings$r2defense)
+
+
+```
+
+Then combine them into one dataframe
+```{r}
+outfit<-as.data.frame(matrix(nrow=0,ncol=16))
+for(w in 1:nrow(weapons)){
+  for(a in 1:nrow(armor)){
+    for(r in 1:nrow(rings)){
+      war<-cbind(weapons[w,],armor[a,],rings[r,])
+      outfit<-rbind(outfit,war)}}}
+
+```
+
+So - now calculate all the stuff that matters:  total cost, damage points, armor points
+```{r}
+outfit <- outfit %>% rowwise %>% mutate(totalcost=r1cost+r2cost+wcost+acost,
+                                        damagepoints=wdamage+adamage+r1damage+r2damage,
+                                        defensepoints=wdefense+adefense+r1defense+r2defense)
+```
+
+Then, find the points per turn & the number of turns to lose & whether or not you win
+```{r}
+bossdamage<-7
+bossarmor<-2
+bosshitpoints<-12
+playerhitpoints<-10
+outfit <- outfit %>% rowwise %>%
+  mutate(playerdamage=max(bossdamage-defensepoints,1),
+         bossdamage=(max(damagepoints-bossarmor,1))) %>%
+  ### death is the number of whole turns before hitting 0, 100 is player hit points
+  mutate(playerdeathat=ceiling(playerhitpoints/playerdamage),
+         bossdeathat=ceiling(bosshitpoints/bossdamage)) %>%
+  ### because the player goes first, if it takes more (or the same) turns, the player wins
+  mutate(win=ifelse(playerdeathat>=bossdeathat,"Win","Lose"))
+### sample outfits
+select(outfit,c(weapon,armor,ring1,ring2,damagepoints,defensepoints,totalcost,win))[sample(1:nrow(outfit),8),]
+```
+
+
+```{r}
+cheapest<- outfit %>% group_by(win) %>% summarise(tc=min(totalcost))
+part1<-cheapest%>%filter(win=="Win")%>%select(tc)
+part1
+```
+
+## Part 2
+Everything is already set up, just find out which is the most expensive loss
+```{r}
+costliest <- outfit %>% group_by(win) %>% summarize(tc=max(totalcost))
+part2 <- costliest %>% filter(win=="Lose") %>% select(tc)
+part2
+```

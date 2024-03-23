@@ -1,0 +1,228 @@
+---
+title: "Day 22 Notebook"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(dplyr)
+library(stringr)
+library(tidyverse)
+library(readr)
+library(collections)
+options(scipen = 999)
+```
+
+
+## Part 1
+
+I think this can work in a bfs sort of way using boss=0 as the end point and mana as the measure of distance.
+
+```{r}
+killtheboss<-function(bosspoints,bossattack,playerpoints,startmana){
+  ### set up the priority queue
+  turnq<-priority_queue()
+  turn<-list(t="player",stimer=0,ptimer=0,rtimer=0,
+             bpoints=bosspoints,ppoints=playerpoints,
+             mana=startmana,spent=0,
+             pth="start \t")
+  turnq$push(turn,priority=0)
+  ###while there are still turns
+  while(turnq$size()>0){
+    ### set armor to 0 for the turn
+    armor<-0
+    ### pop the turn info and break into pieces
+    turn<-turnq$pop()
+    ### if boss is at 0, you've won
+    if(turn$bpoints==0){
+      return(turn)
+      break}
+    ### if player=0, you're dead
+    if(turn$ppoints==0){next}
+    ### run the effects - decrease timers by 1
+    ### shield
+    if(turn$stimer>0){
+      turn$stimer<-turn$stimer-1
+      armor<-armor+7}
+    ### poison
+    if(turn$ptimer>0){
+      turn$ptimer<-turn$ptimer-1
+      turn$bpoints<-max(turn$bpoints-3,0)}
+    ### recharge
+    if(turn$rtimer>0){
+      turn$rtimer<-turn$rtimer-1
+      turn$mana<-turn$mana+101}
+    ### if boss turn hit the player, return to queue.
+    if(turn$t=="boss"){
+      damage<-max(bossattack-armor,1)
+      nextturn<-list(t="player",stimer=turn$stimer,ptimer=turn$ptimer,rtimer=turn$rtimer,
+             bpoints=turn$bpoints,ppoints=max(turn$ppoints-damage,0),
+             mana=turn$mana,spent=turn$spent,
+             pth=str_c(turn$pth,"\t"))
+      turnq$push(nextturn,priority=-nextturn$spent)
+    ### if player's turn, run through all possibilities
+    ### return each  to the queue with priority of -spentmana}
+    }else if(turn$t=="player"){
+      ### Magic Missle
+      if(turn$mana>=53){
+      mmturn<-list(t="boss",stimer=turn$stimer,ptimer=turn$ptimer,rtimer=turn$rtimer,
+                   ### lower boss hitpoints
+                   bpoints=max(turn$bpoints-4,0),ppoints=turn$ppoints,
+                   ### spend mana & update the mana spent
+                   mana=turn$mana-53,spent=turn$spent+53,
+                   pth=str_c(turn$pth,";magic missle"))
+      turnq$push(mmturn,priority=-mmturn$spent)}
+      ### Drain
+      if(turn$mana>=73){
+      dturn<-list(t="boss",stimer=turn$stimer,ptimer=turn$ptimer,rtimer=turn$rtimer,
+                  ### lower boss hitpoints
+                  bpoints=max(turn$bpoints-2,0),ppoints=turn$ppoints+2,
+                  ### spend mana & update the mana spent
+                  mana=turn$mana-73,spent=turn$spent+73,
+                  pth=str_c(turn$pth,";drain"))
+      turnq$push(dturn,priority=-dturn$spent)}
+      ### Shield
+      if(turn$stimer==0&&turn$mana>=113){
+      sturn<-list(t="boss",stimer=6,ptimer=turn$ptimer,rtimer=turn$rtimer,
+                  ### lower boss hitpoints
+                  bpoints=turn$bpoints,ppoints=turn$ppoints,
+                  ### spend mana & update the mana spent
+                  mana=turn$mana-113,spent=turn$spent+113,
+                  pth=str_c(turn$pth,";shield"))
+      turnq$push(sturn,priority=-sturn$spent)}
+      ### Poison
+      if(turn$ptimer==0&&turn$mana>=173){
+      pturn<-list(t="boss",stimer=turn$stimer,ptimer=6,rtimer=turn$rtimer,
+                  ### lower boss hitpoints
+                  bpoints=turn$bpoints,ppoints=turn$ppoints,
+                  ### spend mana & update the mana spent
+                  mana=turn$mana-173,spent=turn$spent+173,
+                  pth=str_c(turn$pth,";poison"))
+      turnq$push(pturn,priority=-pturn$spent)}
+      ### Recharge
+      if(turn$rtimer==0&&turn$mana>=229){
+      rturn<-list(t="boss",stimer=turn$stimer,ptimer=turn$ptimer,rtimer=5,
+                  ### lower boss hitpoints
+                  bpoints=turn$bpoints,ppoints=turn$ppoints,
+                  ### spend mana & update the mana spent
+                  mana=turn$mana-229,spent=turn$spent+229,
+                  pth=str_c(turn$pth,";recharge"))
+      turnq$push(rturn,priority=-rturn$spent)}
+    }else{
+      cat("who's turn is it anyway")
+      break}}}
+```
+Test with boss at 14 hp, 8 damage & player at 10hp, 250 mana
+```{r}
+part1<-killtheboss(14,8,10,250)
+cat(part1$pth,"\n")
+part1<-part1$spent
+part1
+```
+
+## Part 2
+At the beginning of a player turn, subtract a hit point.
+
+```{r}
+killthebosshard<-function(bosspoints,bossattack,playerpoints,startmana){
+  ### set up the priority queue
+  turnq<-priority_queue()
+  turn<-list(t="player",stimer=0,ptimer=0,rtimer=0,
+             bpoints=bosspoints,ppoints=playerpoints,
+             mana=startmana,spent=0,
+             pth="start \t")
+  turnq$push(turn,priority=0)
+  ###while there are still turns
+  while(turnq$size()>0){
+    ### set armor to 0 for the turn
+    armor<-0
+    ### pop the turn info and break into pieces
+    turn<-turnq$pop()
+    ### lose a point at the beginning of a player turn.
+    if(turn$t=="player"){turn$ppoints=max(turn$ppoints-1,0)}
+    ### if boss is at 0, you've won
+    if(turn$bpoints==0){return(turn)}
+    ### if player=0, you're dead
+    if(turn$ppoints==0){next}
+    ### run the effects - decrease timers by 1
+    ### shield
+    if(turn$stimer>0){
+      turn$stimer<-turn$stimer-1
+      armor<-armor+7}
+    ### poison
+    if(turn$ptimer>0){
+      turn$ptimer<-turn$ptimer-1
+      turn$bpoints<-max(turn$bpoints-3,0)}
+    ### recharge
+    if(turn$rtimer>0){
+      turn$rtimer<-turn$rtimer-1
+      turn$mana<-turn$mana+101}
+    ### if boss turn hit the player, return to queue.
+    if(turn$t=="boss"){
+      damage<-max(bossattack-armor,1)
+      nextturn<-list(t="player",stimer=turn$stimer,ptimer=turn$ptimer,rtimer=turn$rtimer,
+             bpoints=turn$bpoints,ppoints=max(turn$ppoints-damage,0),
+             mana=turn$mana,spent=turn$spent,
+             pth=str_c(turn$pth,"\t"))
+      turnq$push(nextturn,priority=-nextturn$spent)
+    ### if player's turn, run through all possibilities
+    ### return each  to the queue with priority of -spentmana}
+    }else if(turn$t=="player"){
+      ### Magic Missle
+      if(turn$mana>=53){
+      mmturn<-list(t="boss",stimer=turn$stimer,ptimer=turn$ptimer,rtimer=turn$rtimer,
+                   ### lower boss hitpoints
+                   bpoints=max(turn$bpoints-4,0),ppoints=turn$ppoints,
+                   ### spend mana & update the mana spent
+                   mana=turn$mana-53,spent=turn$spent+53,
+                   pth=str_c(turn$pth,";magic missle"))
+      turnq$push(mmturn,priority=-mmturn$spent)}
+      ### Drain
+      if(turn$mana>=73){
+      dturn<-list(t="boss",stimer=turn$stimer,ptimer=turn$ptimer,rtimer=turn$rtimer,
+                  ### lower boss hitpoints
+                  bpoints=max(turn$bpoints-2,0),ppoints=turn$ppoints+2,
+                  ### spend mana & update the mana spent
+                  mana=turn$mana-73,spent=turn$spent+73,
+                  pth=str_c(turn$pth,";drain"))
+      turnq$push(dturn,priority=-dturn$spent)}
+      ### Shield
+      if(turn$stimer==0&&turn$mana>=113){
+      sturn<-list(t="boss",stimer=6,ptimer=turn$ptimer,rtimer=turn$rtimer,
+                  ### lower boss hitpoints
+                  bpoints=turn$bpoints,ppoints=turn$ppoints,
+                  ### spend mana & update the mana spent
+                  mana=turn$mana-113,spent=turn$spent+113,
+                  pth=str_c(turn$pth,";shield"))
+      turnq$push(sturn,priority=-sturn$spent)}
+      ### Poison
+      if(turn$ptimer==0&&turn$mana>=173){
+      pturn<-list(t="boss",stimer=turn$stimer,ptimer=6,rtimer=turn$rtimer,
+                  ### lower boss hitpoints
+                  bpoints=turn$bpoints,ppoints=turn$ppoints,
+                  ### spend mana & update the mana spent
+                  mana=turn$mana-173,spent=turn$spent+173,
+                  pth=str_c(turn$pth,";poison"))
+      turnq$push(pturn,priority=-pturn$spent)}
+      ### Recharge
+      if(turn$rtimer==0&&turn$mana>=229){
+      rturn<-list(t="boss",stimer=turn$stimer,ptimer=turn$ptimer,rtimer=5,
+                  ### lower boss hitpoints
+                  bpoints=turn$bpoints,ppoints=turn$ppoints,
+                  ### spend mana & update the mana spent
+                  mana=turn$mana-229,spent=turn$spent+229,
+                  pth=str_c(turn$pth,";recharge"))
+      turnq$push(rturn,priority=-rturn$spent)}
+    }else{
+      cat("who's turn is it anyway")
+      break}}}
+```
+
+Had the lower the boss points, otherwise we can't win.
+
+```{r}
+part2<-killthebosshard(8,8,10,250)
+cat(part2$pth,"\n")
+part2<-part2$spent
+part2
+```

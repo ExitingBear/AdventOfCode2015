@@ -1,0 +1,61 @@
+---
+title: "Day 20 Notebook"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(dplyr)
+library(stringr)
+library(tidyverse)
+library(igraph)
+library(ggplot2)
+library(rgl)
+library(ggraph)
+library(readr)
+library(ds4psy)
+library(numbers)
+options(scipen = 999)
+```
+
+
+## Part 1
+
+Basically - just figure out how many are at each house for the first 2900000 houses (house 2900000 has at least 29000010)
+```{r}
+target<-50000
+houses<-rep(0,target/10)
+
+for(i in 1:(target/10)){
+  for(j in seq(from=i,to=target/10,by=i)){
+    houses[j]<-houses[j]+i*10
+  }}
+```
+
+Find the first house that's greater than the target.
+
+```{r}
+part1<-min(which(houses>=target))
+part1
+```
+
+## Part 2
+Each elf only visits 50 houses, but they drop 11 at each house.
+```{r}
+target<-50000
+houses<-rep(0,target)
+
+### try with just 3 million elves.
+for(i in 1:target){
+  ###only go to 50 houses
+  for(j in 1:50){
+    x<-j*i
+    ### give 11 presents
+    houses[x]<-houses[x]+i*11}}
+```
+
+```{r}
+part2<-min(which(houses>=target))
+part2
+```
+

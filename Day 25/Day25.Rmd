@@ -1,0 +1,40 @@
+---
+title: "Day 25 Notebook"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(dplyr)
+library(stringr)
+library(readr)
+library(numbers)
+options(scipen = 999)
+```
+
+
+## Part 1
+Not the most graceful solution, but just counting up will work.
+```{r}
+### set target row & column
+tr<-5
+tc<-5
+### start from 1 & 1
+r<-1
+c<-1
+code<-20151125
+while(r!=tr||c!=tc){
+  ### change the code
+  code<-code*252533
+  code<-code%%33554393
+  ### if it is at the upper right, move down to the lower left
+  if(r==1){
+    r<-c+1
+    c<-1}else{
+      ### otherwise, climb up diagonally
+      r<-r-1
+      c<-c+1}}
+part1<-code
+part1
+```
+
